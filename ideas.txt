@@ -1,0 +1,154 @@
+functionalities:
+- user auth
+- user crud
+- get restaurants
+- register restaurant
+- follow other user
+- review a restaurant
+
+services:
+- user service(login, register; logout)
+- restaurant service(register, get(for user) )
+- follower service (follow, unfollow)
+- review service (post rating, get all for a restaurant) (probably requires NOSQL)
+- media service (upload pics from ratings, ) (LATER)
+- search service (search for tags/names etc) (based on elastic) (LATER)
+
+questions to Alf:
+- where is the code regarding the login?
+- How does one verify that a user is logged in? for example in oip-mono-be/shared/common/src/client/DemoTokenClient.ts
+is this how you do it?
+- where are the DBs located? same server as any of the microservices?
+- do all over databases run on the same server?
+
+services mock queries:
+- user service
+	login
+		SELECT COUNT(*)
+		FROM users
+		WHERE user_id= $user_id
+		AND hashed_pw = $hashed_pw
+
+		=> users table: index on user_id
+	register
+		INSERT INTO table_name (name, email, ...) VALUES ('some_name', 'someone@gmail.com', ...)
+	logout
+		None
+	get (useful for later)
+		SELECT name FROM users WHERE WHERE user_id= $user_id
+	delete
+	follow
+
+	* accesses: users, reviews(on delete maybe?)
+
+- restaurant service
+	register
+		INSERT INTO restaurants (user_name, email, ...) VALUES ('some_name', 'someone@gmail.com', ...)
+	
+	get(for user)
+		SELECT * FROM restaurants WHERE restaurant_id=$restaurant_id
+);
+
+	=> restaurants table: index on ID
+	=> restaurants table: index on LOCATION: CREATE INDEX idx_restaurants_location ON restaurants USING GIST(LOCATION);
+	=> restaurants table: potential read replica for this table
+
+	* accesses: restaurants
+
+- review service
+	post review
+		INSERT INTO reviews (user_id, ) VALUES ('some_name', 'someone@gmail.com', ...)
+	get all for a restaurant
+		SELECT * FROM reviews WHERE restaurant_id=$restaurant_id
+	get nearby reviews
+
+		-- users_followed
+		SELECT followed_id
+		FROM followers
+		WHERE follower_id=$user_id
+
+
+		-- nearby restaurants
+		SELECT restaurant_id
+		FROM restaurants
+		WHERE ST_DWithin
+			(
+    			location,
+    			ST_SetSRID(ST_MakePoint($location.longitude, $location.latitude), 4326),
+    			$search_radius * 1000 -- Convert km to meters
+			)
+		--WHERE ST_DWithin(
+    		--	location,
+    		--	ST_MakePoint(longitude, latitude)::GEOGRAPHY,
+    		--	radius_in_meters
+
+		SELECT 
+			restaurant_id,
+			restaurant_name,  -- no aggregation on non group col => first val is picked
+			location,   -- no aggregation on non group col => first val is picked
+			AVG(rating) AS avg_rating,
+			COUNT(restaurant_id) AS num_ratings
+		FROM reviews
+		WHERE user_id in ($followed_ids) AND restaurand_id in ($nearby_restaurant_ids)
+		GROUPBY restaurand_id
+
+	* accesses: 
+
+tables:
+SQL
+	users:
+		user_id INT AUTOINCREMENT PK
+		name VARCHAR(20)
+		email VARCHAR(25)
+		hashed_pw VARCHAR(?)
+		created_at
+
+	restaurants:
+		restaurant_id INT AUTOINCREMENT
+		name VARCHAR(20)
+		tel TEXT
+		link zu google TEXT?
+		email VARCHAR(25)
+		country ENUM
+		city ENUM
+		street VARCHAR(30)
+		number VARCHAR(10)
+		postcode INT(8)
+		location GEOGRAPHY(POINT, 4326) NOT NULL & CREATE INDEX idx_restaurants_location ON restaurants USING GIST(LOCATION);
+		created_at
+
+	followers:
+		follower_id
+		followed_id
+		created_at
+
+NOSQL
+	reviews:
+		user_id IDX
+		restaurant_id IDX
+		location ?
+		restaurant_name varchar(20)
+		rating INT(8)
+		text VARCHAR(100)
+		created_at 
+
+		PRIMARY KEY ((user_id) , restaurant_id, created_at)
+		[user_id and restaurant_id are good PKs by them selves since they have high cardinality
+		a combined PK of both is probably bad, since most partitions will only contain one row
+		(users will only rate a specific restaurant once), which is not performant]
+		
+
+PROBLEMS to solve:
+- double registration
+	=> within small radius compare email/tel
+	=> enter address first, then suggest registered places
+- verify information
+- restaurant zieht um => SDC
+- link zu google maps statt karte
+- review vor Umzug (vici vorschlag mit klammern)
+
+additional info:
+- guck mal "letterbox"
+- 
+
+
