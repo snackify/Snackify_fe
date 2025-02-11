@@ -139,13 +139,18 @@ NOSQL
 		
 
 PROBLEMS to solve:
+- link zu google maps statt karte
+- categories (von google oder preselected list)
+	- registered categories can differ from categories filtered for:
+	you can't register just "asian", but "vietnamese", "chinese", "asian_fusion", ...
+	but you can filter for "asian" and get all just mentioned
+
+solved problems:
 - double registration
 	=> within small radius compare email/tel
 	=> enter address first, then suggest registered places
 - verify information
 - restaurant zieht um => SDC
-- link zu google maps statt karte
-- review vor Umzug (vici vorschlag mit klammern)
 
 additional info:
 - guck mal "letterbox"
