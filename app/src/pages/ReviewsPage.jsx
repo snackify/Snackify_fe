@@ -1,54 +1,48 @@
 import { useState, useEffect } from "react";
 import { postReview } from "../api/reviewApi";
 
-// Function to fetch restaurant details based on names
-const fetchAndAddRestaurant = async (restaurantName, city, country) => {
+const fetchOrCreate = async (url, body) => {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return response.ok ? response.json() : null;
+};
+
+const fetchRestaurantId = async (countryName, cityName, restaurantName) => {
   try {
-    const token = localStorage.getItem("jwt_token");
+    let countryResponse = await fetch(`${import.meta.env.RESTAURANT_SERVICE_URL}/restaurants/countries?country_name=${countryName}`);
+    let countryData = countryResponse.ok ? await countryResponse.json() : null;
+    let countryId = countryData ? countryData.country_id : null;
 
-    // 1. Try fetching the restaurant
-    const response = await fetch(
-      `http://127.0.0.1:8004/api/v1/restaurants?restaurant_name=${encodeURIComponent(restaurantName)}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
-    if (response.ok) {
-      const data = await response.json();
-      return data; // Return existing restaurant
+    if (!countryId) {
+      countryData = await fetchOrCreate(`${import.meta.env.RESTAURANT_SERVICE_URL}/restaurants/countries`, { country_name: countryName });
+      countryId = countryData?.country_id;
     }
 
-    if (response.status === 404) {
-      console.warn("Restaurant not found. Attempting to add...");
+    let cityResponse = await fetch(`${import.meta.env.RESTAURANT_SERVICE_URL}/restaurants/cities?city_name=${cityName}&country_id=${countryId}`);
+    let cityData = cityResponse.ok ? await cityResponse.json() : null;
+    let cityId = cityData ? cityData.city_id : null;
 
-      // 2. If not found, attempt to create it
-      const addResponse = await fetch(`/restaurants`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: restaurantName,
-          city: city,
-          country: country,
-        }),
-      });
-
-      if (!addResponse.ok) {
-        throw new Error(`Failed to create restaurant: ${addResponse.status}`);
-      }
-
-      const newRestaurant = await addResponse.json();
-      console.log("Restaurant added successfully:", newRestaurant);
-      return newRestaurant;
+    if (!cityId) {
+      cityData = await fetchOrCreate(`${import.meta.env.RESTAURANT_SERVICE_URL}/restaurants/cities`, { city_name: cityName, country_id: countryId });
+      cityId = cityData?.city_id;
     }
 
-    throw new Error(`HTTP error! Status: ${response.status}`);
+    let restaurantResponse = await fetch(`${import.meta.env.RESTAURANT_SERVICE_URL}/restaurants?restaurant_name=${restaurantName}&city_id=${cityId}&country_id=${countryId}`);
+    let restaurantData = restaurantResponse.ok ? await restaurantResponse.json() : null;
+    let restaurantId = restaurantData ? restaurantData.restaurant_id : null;
+
+    if (!restaurantId) {
+      restaurantData = await fetchOrCreate(`${import.meta.env.RESTAURANT_SERVICE_URL}/restaurants`, { restaurant_name: restaurantName, city_id: cityId, country_id: countryId });
+      restaurantId = restaurantData?.restaurant_id;
+    }
+
+    return { countryId, cityId, restaurantId };
   } catch (error) {
-    console.error("Error fetching or adding restaurant:", error);
-    return null;
+    console.error("Error fetching or creating IDs:", error);
+    return { countryId: null, cityId: null, restaurantId: null };
   }
 };
 
@@ -87,7 +81,7 @@ const ReviewsPage = () => {
     e.preventDefault();
     
     const { country_name, city_name, restaurant_name } = reviewData;
-    const { countryId, cityId, restaurantId } = await fetchAndAddRestaurant(
+    const { countryId, cityId, restaurantId } = await fetchRestaurantId(
       country_name,
       city_name,
       restaurant_name

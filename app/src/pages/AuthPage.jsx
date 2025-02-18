@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { signup, login, fetchUser } from "../api";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "../context/UserContext"; // Import UserContext
 
 export default function AuthPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
-  const [user, setUser] = useState(null);
+  const { user, setUser } = useContext(UserContext); // Get user from context
   const navigate = useNavigate();
 
   const handleSignup = async () => {
@@ -24,7 +25,7 @@ export default function AuthPage() {
       await login(username, password);
       setMessage("Login successful!");
       const res = await fetchUser(username);
-      setUser(res.data);
+      setUser(res.data); // Update UserContext so it's accessible across pages
       navigate("/feed");
     } catch (error) {
       setMessage(error.response?.data || "Login failed");

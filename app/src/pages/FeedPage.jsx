@@ -2,14 +2,16 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchReviews, fetchFollowedUsers } from "../api";
 import ReviewList from "../components/ReviewList";
+import { UserContext } from "../context/UserContext";  
 
 export default function FeedPage() {
   const [reviews, setReviews] = useState([]);
+  const { user } = useContext(UserContext);
 
   useEffect(() => {
     const loadReviews = async () => {
       try {
-        const followedRes = await fetchFollowedUsers(1); // Replace with logged-in user ID
+        const followedRes = await fetchFollowedUsers(user.user_id);
         const followedIds = followedRes.data.map(user => user.followee_id);
         const reviewsRes = await fetchReviews(followedIds);
         setReviews(reviewsRes.data);
