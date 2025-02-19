@@ -1,18 +1,26 @@
-import { useState, useContext } from "react";
-import { Link } from "react-router-dom";
+import { useState, useContext, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { followUser, unfollowUser } from "../api/followerApi";
 import { UserContext } from "../context/UserContext";  
 
 const FollowPage = () => {
   const [username, setUsername] = useState("");
-  const { user } = useContext(UserContext);
+  const { user, logout } = useContext(UserContext);
+  const navigate = useNavigate();
+
+  // Redirect to AuthPage if user is not logged in
+  useEffect(() => {
+    if (!user) {
+      navigate("/", { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleFollow = async () => {
     if (!username) {
       console.error("Please enter a username to follow.");
       return;
     }
-    if (!user || !user.user_id) {  // 🔹 Ensure user and user_id exist
+    if (!user || !user.user_id) { 
       console.error("User must be logged in to follow someone.");
       return;
     }
@@ -29,7 +37,7 @@ const FollowPage = () => {
       console.error("Please enter a username to unfollow.");
       return;
     }
-    if (!user || !user.user_id) {  // 🔹 Ensure user and user_id exist
+    if (!user || !user.user_id) {
       console.error("User must be logged in to unfollow someone.");
       return;
     }
@@ -46,7 +54,10 @@ const FollowPage = () => {
       <h1>Follow or Unfollow Users</h1>
       {user ? <p>Logged in as: {user.username}</p> : <p>Please log in.</p>}
 
-      {/* 🔹 Navigation Links (Restored from original) */}
+      {/* 🔹 Logout Button */}
+      {user && <button onClick={logout}>Logout</button>}
+
+      {/* 🔹 Navigation Links */}
       <div className="mb-4">
         <Link to="/feed">
           <button>Feed</button>

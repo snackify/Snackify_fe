@@ -13,7 +13,7 @@ export const UserProvider = ({ children }) => {
       try {
         const res = await fetchUser();
         setUser(res.data);
-        localStorage.setItem("user", JSON.stringify(res.data)); // Save to localStorage
+        localStorage.setItem("user", JSON.stringify(res.data));
       } catch (error) {
         console.error("Error fetching user:", error);
       }
@@ -29,8 +29,13 @@ export const UserProvider = ({ children }) => {
     }
   }, [user]);
 
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("user");
+  };
+
   return (
-    <UserContext.Provider value={{ user, setUser }}>
+    <UserContext.Provider value={{ user, setUser, logout }}>
       {children}
     </UserContext.Provider>
   );
