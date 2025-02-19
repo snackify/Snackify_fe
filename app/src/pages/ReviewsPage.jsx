@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { postReview } from "../api/reviewApi";
+import { UserContext } from "../context/UserContext";
 
 const fetchOrCreate = async (url, body) => {
   const response = await fetch(url, {
@@ -46,10 +48,11 @@ const fetchRestaurantId = async (countryName, cityName, restaurantName) => {
   }
 };
 
-
 const ReviewsPage = () => {
+  const { user, logout } = useContext(UserContext);
+  const navigate = useNavigate();
   const [reviewData, setReviewData] = useState({
-    user_id: 1, // Example user ID
+    user_id: user?.user_id || null,
     categories: [],
     country_name: "",
     city_name: "",
@@ -60,6 +63,13 @@ const ReviewsPage = () => {
     long: 0,
     lat: 0,
   });
+
+  // Redirect to AuthPage if user is not logged in
+  useEffect(() => {
+    if (!user) {
+      navigate("/", { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -79,7 +89,7 @@ const ReviewsPage = () => {
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
-    
+
     const { country_name, city_name, restaurant_name } = reviewData;
     const { countryId, cityId, restaurantId } = await fetchRestaurantId(
       country_name,
@@ -103,8 +113,22 @@ const ReviewsPage = () => {
   };
 
   return (
-    <div>
-      <h1>Add a Review</h1>
+    <div className="p-6 max-w-md mx-auto">
+      <h1 className="text-xl font-bold">Add a Review</h1>
+
+      {/* Logout Button */}
+      {user && (
+        <button
+          onClick={() => {
+            logout();
+            navigate("/", { replace: true });
+          }}
+          className="bg-red-500 text-white px-4 py-2 rounded mb-4"
+        >
+          Logout
+        </button>
+      )}
+
       <form onSubmit={handleReviewSubmit}>
         <div>
           <label htmlFor="restaurant_name">Restaurant Name</label>
@@ -193,7 +217,9 @@ const ReviewsPage = () => {
             required
           />
         </div>
-        <button type="submit">Submit Review</button>
+        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
+          Submit Review
+        </button>
       </form>
     </div>
   );
