@@ -22,7 +22,7 @@ export const followUser = async (followeeName, user) => {
       "followee_id": followeeId
     };
 
-    const response = await fetch("http://localhost:8003/api/v1/follower", {
+    const response = await fetch("http://0.0.0.0:8003/api/v1/follower", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(followData),
