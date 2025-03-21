@@ -4,8 +4,8 @@ const ReviewList = ({ reviews }) => {
       {reviews.length === 0 ? (
         <p>No reviews to show</p>
       ) : (
-        reviews.map((review) => (
-          <div key={review.id} className="border p-4 my-2 rounded">
+        reviews.map((review, index) => (
+          <div key={index} className="border p-4 my-2 rounded">
             <h2 className="font-bold">{review.restaurant_name}</h2>
             <p>Rating: {review.rating}</p>
             <p>Categories: {review.categories ? review.categories.join(", ") : "N/A"}</p>

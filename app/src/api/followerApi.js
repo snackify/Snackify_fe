@@ -5,7 +5,7 @@ export const followUser = async (followeeName, user) => {
     }
 
     // get the followee ID from the followees username
-    const response_followee = await fetch(`http://localhost:8001/api/v1/users?username=${followeeName}`, {
+    const response_followee = await fetch(`${import.meta.env.VITE_USER_SERVICE_URL}/users?username=${followeeName}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -22,7 +22,7 @@ export const followUser = async (followeeName, user) => {
       "followee_id": followeeId
     };
 
-    const response = await fetch("http://0.0.0.0:8003/api/v1/follower", {
+    const response = await fetch(`${import.meta.env.VITE_FOLLOWER_SERVICE_URL}/follower`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(followData),
@@ -34,7 +34,7 @@ export const followUser = async (followeeName, user) => {
   export const unfollowUser = async (followeeName, user) => {
 
     // get the followee ID from the followees username
-    const response_followee = await fetch(`http://localhost:8001/api/v1/users?username=${followeeName}`, {
+    const response_followee = await fetch(`${import.meta.env.VITE_USER_SERVICE_URL}/users?username=${followeeName}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -50,7 +50,7 @@ export const followUser = async (followeeName, user) => {
       "followee_id": followeeId
     };
 
-    const response = await fetch("http://localhost:8003/api/v1/follower", {
+    const response = await fetch(`${import.meta.env.VITE_FOLLOWER_SERVICE_URL}/follower`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(followData),

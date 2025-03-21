@@ -6,6 +6,7 @@ import { UserContext } from "../context/UserContext";
 
 export default function FeedPage() {
   const [reviews, setReviews] = useState([]);
+  const [noFollowedUsers, setNoFollowedUsers] = useState(false);
   const { user, logout } = useContext(UserContext);
   const navigate = useNavigate();
 
@@ -18,14 +19,25 @@ export default function FeedPage() {
 
   useEffect(() => {
     const loadReviews = async () => {
-      if (!user) return; // Prevent API calls if user is null
+      if (!user) return;
       try {
         const followedRes = await fetchFollowedUsers(user.user_id);
-        const followedIds = followedRes.data.map(user => user.followee_id);
+        const followedIds = followedRes.data.followees
+
+        if (followedIds.length === 0) {
+          setNoFollowedUsers(true);
+          return;
+        }
+
         const reviewsRes = await fetchReviews(followedIds);
-        setReviews(reviewsRes.data);
+
+        setReviews(reviewsRes.data.reviews);
       } catch (error) {
-        console.error("Failed to fetch reviews", error);
+        if (error.response?.status === 404) {
+          setNoFollowedUsers(true);
+        } else {
+          console.error("Failed to fetch reviews", error);
+        }
       }
     };
     loadReviews();
@@ -54,7 +66,12 @@ export default function FeedPage() {
         </Link>
       </div>
 
-      <ReviewList reviews={reviews} />
+      {/* 🔹 Handle No Followed Users */}
+      {noFollowedUsers ? (
+        <p className="text-gray-500">You're not following anyone yet. Follow users to see their reviews!</p>
+      ) : (
+        <ReviewList reviews={reviews} />
+      )}
     </div>
   );
 }

@@ -1,8 +1,9 @@
 export const postReview = async (reviewData) => {
-    const response = await fetch("http://localhost:8002/reviews", {
+    const response = await fetch(`${import.meta.env.VITE_REVIEW_SERVICE_URL}/reviews`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(reviewData),
+      credentials: "include",
     });
     return response.json();
   };

@@ -1,10 +1,10 @@
-FROM node:18
+FROM node:20
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm install
+COPY frontend/app/package.json frontend/app/yarn.lock ./
+RUN yarn install --frozen-lockfile
 
-COPY . .
+COPY frontend/app ./
 
-CMD ["npm", "run", "dev"]
+CMD ["yarn", "dev"]

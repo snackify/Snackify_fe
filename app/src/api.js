@@ -8,6 +8,7 @@ const userApi = axios.create({
 const reviewApi = axios.create({
   baseURL: import.meta.env.VITE_REVIEW_SERVICE_URL,
   withCredentials: true,
+  headers: {"Accept": "application/json"},
 });
 
 const followerApi = axios.create({
@@ -15,8 +16,9 @@ const followerApi = axios.create({
   withCredentials: true,
 });
 
-export const signup = (username, password, email) =>
-  userApi.post("/users/sign_up", { username, password, email });
+export const signup = (username, password, email) => {
+  return userApi.post("/users/sign_up", { username, password, email });
+};
 
 export const login = (username, password) => {
   return userApi.post("/auth/login", { username, login_password: password });

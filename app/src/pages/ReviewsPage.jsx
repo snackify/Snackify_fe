@@ -8,37 +8,50 @@ const fetchOrCreate = async (url, body) => {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    credentials: "include",
   });
   return response.ok ? response.json() : null;
 };
 
-const fetchRestaurantId = async (countryName, cityName, restaurantName) => {
+const fetchRestaurantId = async (countryName, cityName, restaurantName, street, num, tel, link_to_google, long, lat) => {
   try {
-    let countryResponse = await fetch(`${import.meta.env.RESTAURANT_SERVICE_URL}/restaurants/countries?country_name=${countryName}`);
+    let countryResponse = await fetch(
+      `${import.meta.env.VITE_RESTAURANT_SERVICE_URL}/restaurants/countries?country_name=${countryName}`,
+      {
+        method: "GET", // Optional, default is GET
+        credentials: "include", // Enables sending cookies with cross-origin requests
+      }
+    );
     let countryData = countryResponse.ok ? await countryResponse.json() : null;
     let countryId = countryData ? countryData.country_id : null;
 
-    if (!countryId) {
-      countryData = await fetchOrCreate(`${import.meta.env.RESTAURANT_SERVICE_URL}/restaurants/countries`, { country_name: countryName });
-      countryId = countryData?.country_id;
+    if (countryId === null || countryResponse.status === 404) {
+      countryId = await fetchOrCreate(`${import.meta.env.VITE_RESTAURANT_SERVICE_URL}/restaurants/countries`, { country_name: countryName });
     }
 
-    let cityResponse = await fetch(`${import.meta.env.RESTAURANT_SERVICE_URL}/restaurants/cities?city_name=${cityName}&country_id=${countryId}`);
+    let cityResponse = await fetch(
+      `${import.meta.env.VITE_RESTAURANT_SERVICE_URL}/restaurants/cities?city_name=${cityName}&country_id=${countryId}`,
+      {credentials: "include"},
+      );
     let cityData = cityResponse.ok ? await cityResponse.json() : null;
     let cityId = cityData ? cityData.city_id : null;
 
     if (!cityId) {
-      cityData = await fetchOrCreate(`${import.meta.env.RESTAURANT_SERVICE_URL}/restaurants/cities`, { city_name: cityName, country_id: countryId });
-      cityId = cityData?.city_id;
+      cityId = await fetchOrCreate(
+        `${import.meta.env.VITE_RESTAURANT_SERVICE_URL}/restaurants/cities`,
+        { city_name: cityName, country_id: countryId }
+      );
     }
 
-    let restaurantResponse = await fetch(`${import.meta.env.RESTAURANT_SERVICE_URL}/restaurants?restaurant_name=${restaurantName}&city_id=${cityId}&country_id=${countryId}`);
+    let restaurantResponse = await fetch(
+      `${import.meta.env.VITE_RESTAURANT_SERVICE_URL}/restaurants?restaurant_name=${restaurantName}&city_id=${cityId}&country_id=${countryId}&street=${encodeURIComponent(street)}&num=${encodeURIComponent(num)}`,
+      { credentials: "include" }
+    );
     let restaurantData = restaurantResponse.ok ? await restaurantResponse.json() : null;
     let restaurantId = restaurantData ? restaurantData.restaurant_id : null;
 
     if (!restaurantId) {
-      restaurantData = await fetchOrCreate(`${import.meta.env.RESTAURANT_SERVICE_URL}/restaurants`, { restaurant_name: restaurantName, city_id: cityId, country_id: countryId });
-      restaurantId = restaurantData?.restaurant_id;
+      restaurantId = await fetchOrCreate(`${import.meta.env.VITE_RESTAURANT_SERVICE_URL}/restaurants`, { restaurant_name: restaurantName, city_id: cityId, country_id: countryId, street: street, num: num, tel: tel, link_to_google: link_to_google, long: long, lat: lat });
     }
 
     return { countryId, cityId, restaurantId };
@@ -60,6 +73,10 @@ const ReviewsPage = () => {
     restaurant_id: 0,
     rating: 0,
     review: "",
+    street: "",
+    num: "",
+    tel: "",
+    link_to_google: "",
     long: 0,
     lat: 0,
   });
@@ -94,21 +111,33 @@ const ReviewsPage = () => {
     const { countryId, cityId, restaurantId } = await fetchRestaurantId(
       country_name,
       city_name,
-      restaurant_name
+      restaurant_name,
+      reviewData.street,
+      reviewData.num,
+      reviewData.tel,
+      reviewData.link_to_google,
+      reviewData.long,
+      reviewData.lat
     );
 
-    if (restaurantId && cityId && countryId) {
-      const updatedReviewData = {
-        ...reviewData,
-        restaurant_id: restaurantId,
-        city_id: cityId,
-        country_id: countryId,
-      };
-
-      const response = await postReview(updatedReviewData);
-      console.log(response);
+    if (!countryId) {
+      console.error("Error: Country ID not found");
+    } else if (!cityId) {
+      console.error("Error: City ID not found");
+    } else if (!restaurantId) {
+      console.error("Error: Restaurant ID not found");
     } else {
-      console.error("Unable to fetch necessary IDs.");
+      const { city_name, country_name, link_to_google, tel, street, num, ...filteredReviewData } = reviewData;
+      const reviewDataPost = {
+        ...filteredReviewData,
+        restaurant_id: restaurantId,
+      };
+    
+      try {
+        const response = await postReview(reviewDataPost);
+      } catch (error) {
+        console.error("Error posting review:", error);
+      }
     }
   };
 
@@ -193,6 +222,50 @@ const ReviewsPage = () => {
             name="review"
             value={reviewData.review}
             onChange={handleInputChange}
+          />
+        </div>
+        <div>
+          <label htmlFor="street">Street</label>
+          <input
+            type="text"
+            id="street"
+            name="street"
+            value={reviewData.street}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="num">Number</label>
+          <input
+            type="text"
+            id="num"
+            name="num"
+            value={reviewData.num}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="tel">Telefone</label>
+          <input
+            type="text"
+            id="tel"
+            name="tel"
+            value={reviewData.tel}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="link_to_google">Link to Google</label>
+          <input
+            type="text"
+            id="link_to_google"
+            name="link_to_google"
+            value={reviewData.link_to_google}
+            onChange={handleInputChange}
+            required
           />
         </div>
         <div>
